@@ -2,6 +2,11 @@
 
 [中文](./README.md) | [English](./README.en.md)
 
+![Version](https://img.shields.io/badge/version-v1.0.0-2563eb)
+![License](https://img.shields.io/badge/license-MIT-16a34a)
+![Deploy](https://img.shields.io/badge/deploy-vercel-000000)
+![Chinese Support](https://img.shields.io/badge/chinese-supported-f97316)
+
 一个适合中文内容的在线 `TXT -> PDF` 工具。
 
 支持中文、代码、多语言排版，支持大文件分片转换，并通过浏览器端合并 PDF 来绕开常见 Serverless 请求体限制。
@@ -45,15 +50,18 @@
 
 ## 效果预览
 
+![txt2pdf home](./assets/home.png)
+
 ![txt2pdf demo](./assets/demo.gif)
 
-建议后续继续补充：
+项目当前已经包含首页截图与操作演示，后续仍建议补充上传后预览截图与更轻量的视频资源。
 
-- 首页截图
-- 上传 TXT 后的预览截图
-- 更轻量的演示 GIF / MP4
+## Use Cases
 
-这样更容易在 GitHub 首页获得点击和 Star。
+- 将中文小说 TXT 导出为适合阅读或打印的 PDF
+- 将代码片段、脚本文件、日志文本整理成 PDF 归档
+- 将纯文本资料转换成更适合分享的固定版式文档
+- 快速搭建一个可在线使用的 `txt2pdf` 工具站
 
 ## 技术方案
 
@@ -139,6 +147,14 @@ vercel --prod
 ## 版本
 
 - 当前版本：`v1.0.0`
+
+## Roadmap
+
+- `v1.0.x` 持续优化 README、展示素材与线上体验
+- `v1.1.0` 支持更多 PDF 导出样式选项，例如边距、字号、行距
+- `v1.2.0` 支持页眉页脚、页码、封面等增强能力
+- `v1.3.0` 支持更多文本格式和更细粒度的导出控制
+- `v2.0.0` 评估对象存储、任务队列与超大文件后端化处理方案
 
 ## License
 

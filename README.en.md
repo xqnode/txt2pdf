@@ -2,6 +2,11 @@
 
 [中文](./README.md) | [English](./README.en.md)
 
+![Version](https://img.shields.io/badge/version-v1.0.0-2563eb)
+![License](https://img.shields.io/badge/license-MIT-16a34a)
+![Deploy](https://img.shields.io/badge/deploy-vercel-000000)
+![Chinese Support](https://img.shields.io/badge/chinese-supported-f97316)
+
 An online `TXT -> PDF` tool built for Chinese text, source code, and large plain-text files.
 
 It supports Chinese rendering, code-friendly layout, chunked conversion for large files, and browser-side PDF merging to avoid common Serverless payload limits.
@@ -45,15 +50,18 @@ This project is built to solve those problems with a lightweight deployable arch
 
 ## Preview
 
+![txt2pdf home](./assets/home.png)
+
 ![txt2pdf demo](./assets/demo.gif)
 
-Recommended future additions:
+The repository now includes a homepage screenshot and a demo GIF. A lighter demo video and an uploaded-preview screenshot would still improve loading speed and conversion further.
 
-- homepage screenshot
-- uploaded TXT preview screenshot
-- a lighter demo GIF / MP4
+## Use Cases
 
-These assets can improve click-through and GitHub stars significantly.
+- Convert Chinese TXT novels into readable or printable PDFs
+- Export code snippets, scripts, or logs into PDF archives
+- Turn plain-text material into fixed-layout documents for sharing
+- Deploy an online `txt2pdf` utility with a simple frontend + Serverless backend setup
 
 ## How it works
 
@@ -136,6 +144,14 @@ you should consider evolving this into:
 ## Version
 
 - Current version: `v1.0.0`
+
+## Roadmap
+
+- `v1.0.x` keep improving README polish, visuals, and production usability
+- `v1.1.0` add more PDF export controls such as margins, font size, and line spacing
+- `v1.2.0` support headers, footers, page numbers, and cover pages
+- `v1.3.0` support more text formats and finer export controls
+- `v2.0.0` evaluate object storage, queues, and backend task processing for very large files
 
 ## License
 
