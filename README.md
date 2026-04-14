@@ -21,7 +21,7 @@
 
 作者：
 
-- 程序员青戈
+- [程序员青戈](https://github.com/xqnode)
 
 ## 为什么做这个
 
@@ -126,11 +126,9 @@ vercel --prod
 
 ## Vercel 注意事项
 
-| 项目 | 说明 |
-|------|------|
-| 单次请求体限制 | Vercel Function 存在请求体大小限制 |
-| 单片转换策略 | 当前默认按 `3MB` 切片 |
-| 大文件合并策略 | 改为浏览器端合并，避免 `FUNCTION_PAYLOAD_TOO_LARGE` |
+- 单次请求体限制：Vercel Function 存在请求体大小限制
+- 单片转换策略：当前默认按 `3MB` 切片
+- 大文件合并策略：改为浏览器端合并，避免 `FUNCTION_PAYLOAD_TOO_LARGE`
 
 如果你的目标是：
 

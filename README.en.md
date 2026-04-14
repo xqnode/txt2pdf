@@ -21,7 +21,7 @@ Repository:
 
 Author:
 
-- 程序员青戈
+- [程序员青戈](https://github.com/xqnode)
 
 ## Why this project
 
@@ -123,11 +123,9 @@ Option 2: GitHub integration
 
 ## Notes about Vercel
 
-| Item | Notes |
-|------|------|
-| Request body limit | Vercel Functions have request payload limits |
-| Chunk strategy | This project currently uses `3MB` chunks |
-| Large-file merge strategy | Final PDF merge happens in the browser to avoid `FUNCTION_PAYLOAD_TOO_LARGE` |
+- Request body limit: Vercel Functions have request payload limits
+- Chunk strategy: This project currently uses `3MB` chunks
+- Large-file merge strategy: Final PDF merge happens in the browser to avoid `FUNCTION_PAYLOAD_TOO_LARGE`
 
 If you need:
 
