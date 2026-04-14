@@ -43,16 +43,28 @@
             display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
             margin-top: 14px;
         }
-        .credit-tag {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 7px 12px; border-radius: 999px;
-            background: #eef2ff; color: #3730a3; font-size: 12px; font-weight: 600;
-            border: 1px solid #c7d2fe;
+        .credit-badge {
+            display: inline-flex; align-items: stretch;
+            border-radius: 8px; overflow: hidden;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
         }
-        .credit-tag a {
+        .credit-badge-label,
+        .credit-badge-value {
+            padding: 7px 12px; font-size: 12px; font-weight: 700; line-height: 1;
+            display: inline-flex; align-items: center;
+        }
+        .credit-badge-label {
+            background: #4b5563; color: #f9fafb;
+        }
+        .credit-badge-value {
+            color: white;
+        }
+        .credit-badge-author .credit-badge-value { background: #f97316; }
+        .credit-badge-repo .credit-badge-value { background: #2563eb; }
+        .credit-badge-value a {
             color: inherit; text-decoration: none;
         }
-        .credit-tag a:hover { text-decoration: underline; }
+        .credit-badge-value a:hover { text-decoration: underline; }
 
         .container { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 20px; }
 
@@ -142,12 +154,17 @@
         <h1>纯净版 TXT 转 PDF</h1>
         <p>支持中文、代码、多语言排版 · 后端转换，支持 30MB 大文件</p>
         <div class="credit-tags">
-            <span class="credit-tag">作者：程序员青戈</span>
-            <span class="credit-tag">
-                仓库：
-                <a href="https://github.com/xqnode/txt2pdf" target="_blank" rel="noreferrer">
-                    github.com/xqnode/txt2pdf
-                </a>
+            <span class="credit-badge credit-badge-author">
+                <span class="credit-badge-label">Author</span>
+                <span class="credit-badge-value">程序员青戈</span>
+            </span>
+            <span class="credit-badge credit-badge-repo">
+                <span class="credit-badge-label">Repo</span>
+                <span class="credit-badge-value">
+                    <a href="https://github.com/xqnode/txt2pdf" target="_blank" rel="noreferrer">
+                        github.com/xqnode/txt2pdf
+                    </a>
+                </span>
             </span>
         </div>
     </div>
