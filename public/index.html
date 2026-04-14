@@ -171,14 +171,14 @@
         <div id="editor-wrapper">
             <div id="editor" contenteditable="true" placeholder="在此输入或粘贴内容..."></div>
         </div>
-    </div>
+</div>
 
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script>
     // ── 配置 ─────────────────────────────────────────────
     const CHUNK_SIZE         = 3 * 1024 * 1024;   // 3MB / 片（保留余量低于 Vercel 4.5MB 限制）
     const PREVIEW_LINE_LIMIT = 2000;               // 编辑区最多显示行数
     const API_CONVERT        = '/api/convert';
-    const API_MERGE          = '/api/merge';
 
     // ── DOM ──────────────────────────────────────────────
     const editor        = document.getElementById('editor');
@@ -305,8 +305,8 @@
         });
 
         if (!resp.ok) {
-            const err = await resp.json().catch(() => ({ error: resp.statusText }));
-            throw new Error(err.error || '转换失败');
+            const err = await readApiError(resp);
+            throw new Error(err || '转换失败');
         }
 
         setBusy(true, '下载中...', 95);
@@ -317,8 +317,8 @@
      * 分片转换（文本 ≥ 3MB）
      * 流程：
      *  1. 把文本按字节切成若干 3MB 片
-     *  2. 逐片 POST /api/convert，得到 PDF base64
-     *  3. 所有片转完后，POST /api/merge 合并
+     *  2. 逐片 POST /api/convert，得到 PDF Blob
+     *  3. 浏览器端合并所有 PDF
      *  4. 触发下载
      */
     async function convertChunked(text, filename) {
@@ -341,41 +341,50 @@
             });
 
             if (!resp.ok) {
-                const err = await resp.json().catch(() => ({ error: resp.statusText }));
-                throw new Error(`第 ${i + 1} 片转换失败：${err.error}`);
+                const err = await readApiError(resp);
+                throw new Error(`第 ${i + 1} 片转换失败：${err}`);
             }
 
-            // 把 PDF 字节转为 base64，发给 merge 接口
-            const pdfBuf  = await resp.arrayBuffer();
-            const pdfB64  = arrayBufferToBase64(pdfBuf);
-            pdfChunks.push(pdfB64);
+            pdfChunks.push(await resp.blob());
         }
 
-        // 合并
-        setBusy(true, `合并 ${totalChunks} 片 PDF...`, 90);
-
-        const mergeResp = await fetch(API_MERGE, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chunks: pdfChunks, filename }),
-        });
-
-        if (!mergeResp.ok) {
-            const err = await mergeResp.json().catch(() => ({ error: mergeResp.statusText }));
-            throw new Error('合并失败：' + err.error);
-        }
+        setBusy(true, `合并 ${totalChunks} 片 PDF...`, 92);
+        const mergedBlob = await mergePdfBlobsInBrowser(pdfChunks, totalChunks);
 
         setBusy(true, '下载中...', 98);
-        await downloadBlob(await mergeResp.blob(), filename + '.pdf');
+        await downloadBlob(mergedBlob, filename + '.pdf');
     }
 
     // ── 工具函数 ──────────────────────────────────────────
 
-    function arrayBufferToBase64(buffer) {
-        const bytes = new Uint8Array(buffer);
-        let binary  = '';
-        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-        return btoa(binary);
+    async function readApiError(resp) {
+        const text = await resp.text();
+        if (!text) return `${resp.status} ${resp.statusText}`;
+        try {
+            const parsed = JSON.parse(text);
+            return parsed.error || parsed.detail || `${resp.status} ${resp.statusText}`;
+        } catch {
+            return text.slice(0, 200) || `${resp.status} ${resp.statusText}`;
+        }
+    }
+
+    async function mergePdfBlobsInBrowser(blobs, totalChunks) {
+        const PDFLibNS = window.PDFLib;
+        if (!PDFLibNS?.PDFDocument) {
+            throw new Error('浏览器端 PDF 合并组件加载失败，请刷新页面重试');
+        }
+
+        const mergedPdf = await PDFLibNS.PDFDocument.create();
+        for (let i = 0; i < blobs.length; i++) {
+            setBusy(true, `合并 ${i + 1}/${totalChunks} 片 PDF...`, 92 + Math.round(((i + 1) / totalChunks) * 6));
+            const bytes = await blobs[i].arrayBuffer();
+            const pdf = await PDFLibNS.PDFDocument.load(bytes);
+            const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+            pages.forEach((page) => mergedPdf.addPage(page));
+        }
+
+        const mergedBytes = await mergedPdf.save();
+        return new Blob([mergedBytes], { type: 'application/pdf' });
     }
 
     async function downloadBlob(blob, filename) {
