@@ -1,80 +1,145 @@
-# TXT 转 PDF — Vercel 部署版
+# txt2pdf
 
-中文完整支持，后端用 reportlab CID 字体渲染，支持 30MB 大文件分片上传。
+[中文](./README.md) | [English](./README.en.md)
 
-## 项目结构
+一个适合中文内容的在线 `TXT -> PDF` 工具。
 
+支持中文、代码、多语言排版，支持大文件分片转换，并通过浏览器端合并 PDF 来绕开常见 Serverless 请求体限制。
+
+在线体验：
+
+- https://txt2pdf.vercel.app/
+
+仓库地址：
+
+- https://github.com/xqnode/txt2pdf
+
+作者：
+
+- 程序员青戈
+
+## 为什么做这个
+
+很多在线 `txt 转 pdf` 工具在下面这些场景里体验并不好：
+
+- 中文乱码
+- 超大 TXT 文件直接失败
+- 代码和纯文本混排后样式难看
+- 部署到 Serverless 平台后，大文件合并容易撞限制
+
+这个项目就是为了解决这些问题。
+
+## 亮点
+
+- 支持中文 PDF 渲染，默认使用 `STSong-Light CID` 字体
+- 支持大文件分片转换，减少单次请求压力
+- 浏览器端合并 PDF，避免服务端 merge 请求过大
+- 纯前端页面 + Python Function，部署结构简单
+- 上传、预览、导出一条龙完成
+
+## 适合谁
+
+- 想把小说 TXT 导出为 PDF 的用户
+- 想把代码或日志文本整理成 PDF 的开发者
+- 想快速部署一个可在线使用的 `txt2pdf` 工具的人
+
+## 效果预览
+
+![txt2pdf demo](./assets/demo.gif)
+
+建议后续继续补充：
+
+- 首页截图
+- 上传 TXT 后的预览截图
+- 更轻量的演示 GIF / MP4
+
+这样更容易在 GitHub 首页获得点击和 Star。
+
+## 技术方案
+
+大文件处理流程：
+
+```text
+前端读取文件（ArrayBuffer 分片，不冻结 UI）
+    ↓
+按 3MB 切片，逐片 POST /api/convert
+    ↓
+每片独立生成 PDF
+    ↓
+浏览器端使用 pdf-lib 合并所有 PDF
+    ↓
+触发下载最终 PDF
 ```
+
+核心目录：
+
+```text
 txt2pdf/
 ├── api/
-│   ├── convert.py      # 单片转换接口（< 3MB/次）
-│   └── merge.py        # 多片合并接口
+│   ├── convert.py      # 单片文本转 PDF
+│   └── merge.py        # 兼容旧合并接口 / 手动合并入口
 ├── public/
 │   └── index.html      # 前端页面
 ├── requirements.txt    # Python 依赖
 └── vercel.json         # Vercel 配置
 ```
 
-## 本地运行（调试用）
+## 本地运行
 
 ```bash
 # 安装依赖
-pip install reportlab pypdf
+pip install -r requirements.txt
 
 # 安装 Vercel CLI
 npm i -g vercel
 
-# 本地启动
+# 启动本地开发环境
 vercel dev
 ```
 
-访问 http://localhost:3000 即可使用。
+打开：
+
+- http://localhost:3000
 
 ## 部署到 Vercel
 
-### 方式一：命令行（推荐）
+方式一：命令行部署
 
 ```bash
-# 首次登录
-vercel login
-
-# 部署
 vercel
-
-# 生产部署
 vercel --prod
 ```
 
-### 方式二：GitHub 自动部署
+方式二：GitHub 自动部署
 
-1. 把项目推送到 GitHub
-2. 打开 https://vercel.com/new
-3. 导入仓库，Vercel 自动识别配置，点击 Deploy
+1. 推送到 GitHub
+2. 在 Vercel 导入仓库
+3. 连接项目后自动部署
 
-## 技术说明
+## Vercel 注意事项
 
-### 中文支持
-使用 reportlab 内置 **STSong-Light CID 字体**，无需上传字体文件，
-PDF 查看器（Adobe、浏览器、系统预览）均可正确显示中文。
+| 项目 | 说明 |
+|------|------|
+| 单次请求体限制 | Vercel Function 存在请求体大小限制 |
+| 单片转换策略 | 当前默认按 `3MB` 切片 |
+| 大文件合并策略 | 改为浏览器端合并，避免 `FUNCTION_PAYLOAD_TOO_LARGE` |
 
-### 大文件处理流程
-```
-前端读取文件（ArrayBuffer 分片，不冻结 UI）
-    ↓
-按 3MB 切片，逐片 POST /api/convert
-    ↓ 每片独立生成 PDF（Vercel 单次限制 4.5MB）
-所有片完成后，POST /api/merge 合并
-    ↓ pypdf 按顺序拼接页面
-触发浏览器下载最终 PDF
-```
+如果你的目标是：
 
-### Vercel 限制说明
+- 更大的单文件
+- 更长的处理时间
+- 更稳定的超大文本导出
 
-| 限制项 | 免费版 | Pro 版 |
-|--------|--------|--------|
-| 函数超时 | 10s | 60s（已在 vercel.json 配置） |
-| 请求体大小 | 4.5MB | 4.5MB |
-| 分片大小 | 3MB/片 | 3MB/片 |
+建议后续演进到：
 
-> **注意**：免费版函数超时为 10 秒，处理单片约 1-2MB 文本没问题。
-> 如需处理更大单片，升级 Hobby 计划（$5/月）将超时延长至 60 秒。
+- 对象存储
+- 队列任务
+- 独立后端服务
+
+## 版本
+
+- 当前版本：`v1.0.0`
+
+## License
+
+MIT
