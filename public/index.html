@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>在线 TXT 转 PDF - 纯净增强版</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #10b981;
+            --success-hover: #059669;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --bg-color: #f3f4f6;
+            --paper-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                "Helvetica Neue", Arial, "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 {
+            margin: 0 0 10px 0; font-size: 28px; font-weight: 700;
+            color: #111827; letter-spacing: 1px;
+        }
+        .header p { margin: 0; color: var(--text-muted); font-size: 14px; }
+
+        .container { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 20px; }
+
+        .toolbar {
+            display: flex; gap: 12px; justify-content: center;
+            background: rgba(255,255,255,0.8); backdrop-filter: blur(10px);
+            padding: 16px; border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            border: 1px solid #e5e7eb; flex-wrap: wrap; align-items: center;
+        }
+
+        #fileInput { display: none; }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 10px 20px; border: none; border-radius: 8px;
+            cursor: pointer; font-weight: 600; font-size: 14px;
+            transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            white-space: nowrap;
+        }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn:active { transform: translateY(0); }
+        .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+        .btn-upload   { background-color: var(--primary); color: white; }
+        .btn-upload:hover:not(:disabled)   { background-color: var(--primary-hover); }
+        .btn-download { background-color: var(--success); color: white; }
+        .btn-download:hover:not(:disabled) { background-color: var(--success-hover); }
+        .btn-clear    { background-color: white; color: var(--danger); border: 1px solid #fecaca; }
+        .btn-clear:hover:not(:disabled)    { background-color: #fef2f2; border-color: var(--danger-hover); }
+
+        /* 进度区 */
+        .progress-area {
+            display: none; flex-direction: column; gap: 5px;
+            min-width: 200px; flex: 1;
+        }
+        .progress-area.visible { display: flex; }
+        #progress-bar-wrap {
+            background: #e5e7eb; border-radius: 99px; height: 6px; overflow: hidden;
+        }
+        #progress-bar {
+            height: 100%; width: 0%; background: var(--success);
+            border-radius: 99px; transition: width 0.25s ease;
+        }
+        #progress-label { font-size: 12px; color: var(--text-muted); }
+
+        /* 文件信息条 */
+        #file-info {
+            display: none; background: #f0fdf4; border: 1px solid #bbf7d0;
+            border-radius: 8px; padding: 10px 16px; font-size: 13px; color: #166534;
+        }
+
+        /* 大文件预览提示 */
+        #preview-notice {
+            display: none; background: #fffbeb; border: 1px solid #fcd34d;
+            border-radius: 8px; padding: 10px 16px; font-size: 13px; color: #92400e;
+        }
+
+        #editor-wrapper {
+            background-color: var(--paper-bg); padding: 20mm;
+            border-radius: 4px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb; margin: 0 auto; width: 100%;
+        }
+
+        #editor {
+            width: 100%; min-height: 600px; outline: none;
+            color: #374151; font-weight: normal; font-size: 15px;
+            line-height: 1.8; white-space: pre-wrap;
+            word-wrap: break-word; word-break: break-all; display: block;
+            font-family: "Consolas", "Monaco", "Microsoft YaHei", monospace;
+        }
+
+        #editor:empty:before {
+            content: attr(placeholder); color: #9ca3af; font-style: italic;
+        }
+
+        @media (max-width: 640px) {
+            body { padding: 20px 10px; }
+            #editor-wrapper { padding: 10mm; }
+            .btn { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>纯净版 TXT 转 PDF</h1>
+        <p>支持中文、代码、多语言排版 · 后端转换，支持 30MB 大文件</p>
+    </div>
+
+    <div class="container">
+        <div class="toolbar">
+            <label for="fileInput" class="btn btn-upload" id="uploadLabel">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                上传文档
+            </label>
+            <input type="file" id="fileInput" accept=".txt,.html,.css,.js,.json" />
+
+            <button class="btn btn-download" id="downloadBtn" onclick="exportPDF()">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                保存为 PDF
+            </button>
+
+            <button class="btn btn-clear" id="clearBtn" onclick="clearEditor()">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                清空内容
+            </button>
+
+            <div class="progress-area" id="progressArea">
+                <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+                <div id="progress-label">准备中...</div>
+            </div>
+        </div>
+
+        <div id="file-info"></div>
+        <div id="preview-notice">
+            ⚠️ 文件较大，编辑区仅显示前 <strong id="preview-line-count"></strong> 行预览，
+            <strong>完整内容将全部写入 PDF</strong>。
+        </div>
+
+        <div id="editor-wrapper">
+            <div id="editor" contenteditable="true" placeholder="在此输入或粘贴内容..."></div>
+        </div>
+    </div>
+
+    <script>
+    // ── 配置 ─────────────────────────────────────────────
+    const CHUNK_SIZE         = 3 * 1024 * 1024;   // 3MB / 片（保留余量低于 Vercel 4.5MB 限制）
+    const PREVIEW_LINE_LIMIT = 2000;               // 编辑区最多显示行数
+    const API_CONVERT        = '/api/convert';
+    const API_MERGE          = '/api/merge';
+
+    // ── DOM ──────────────────────────────────────────────
+    const editor        = document.getElementById('editor');
+    const fileInput     = document.getElementById('fileInput');
+    const downloadBtn   = document.getElementById('downloadBtn');
+    const clearBtn      = document.getElementById('clearBtn');
+    const uploadLabel   = document.getElementById('uploadLabel');
+    const progressArea  = document.getElementById('progressArea');
+    const progressBar   = document.getElementById('progress-bar');
+    const progressLbl   = document.getElementById('progress-label');
+    const previewNotice = document.getElementById('preview-notice');
+    const fileInfo      = document.getElementById('file-info');
+
+    let fullText  = '';   // 完整原始文本
+    let fileName  = '';   // 上传的文件名（不含扩展名）
+
+    // ── 文件上传：分片读取 ────────────────────────────────
+    fileInput.addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        reset();
+        const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+        fileName = file.name.replace(/\.[^.]+$/, '');
+        setBusy(true, `读取文件 (${sizeMB} MB)...`, 0);
+
+        try {
+            fullText = await readFileChunked(file, (pct) =>
+                setBusy(true, `读取中 ${pct}%...`, pct * 0.3)
+            );
+            renderPreview(fullText);
+            fileInfo.style.display = 'block';
+            fileInfo.textContent =
+                `✅ 已加载：${file.name}（${sizeMB} MB · ${fullText.split('\n').length.toLocaleString()} 行）`;
+        } catch(err) {
+            alert('读取文件失败：' + err.message);
+        } finally {
+            setBusy(false);
+            fileInput.value = '';
+        }
+    });
+
+    /**
+     * 分片读取大文件（ArrayBuffer + TextDecoder 流式解码）
+     * 避免一次性 readAsText 卡死主线程
+     */
+    function readFileChunked(file, onProgress) {
+        return new Promise((resolve, reject) => {
+            const SLICE = 2 * 1024 * 1024;
+            let offset = 0;
+            const parts = [];
+            const decoder = new TextDecoder('utf-8');
+
+            function next() {
+                if (offset >= file.size) {
+                    resolve(parts.join('').trim());
+                    return;
+                }
+                const end    = Math.min(offset + SLICE, file.size);
+                const isLast = end >= file.size;
+                const fr     = new FileReader();
+                fr.onload = ev => {
+                    parts.push(decoder.decode(
+                        new Uint8Array(ev.target.result), { stream: !isLast }
+                    ));
+                    offset = end;
+                    onProgress(Math.min(99, Math.round(offset / file.size * 100)));
+                    setTimeout(next, 0);
+                };
+                fr.onerror = () => reject(new Error('读取失败'));
+                fr.readAsArrayBuffer(file.slice(offset, end));
+            }
+            next();
+        });
+    }
+
+    /** 编辑区截断显示（大文件保护） */
+    function renderPreview(text) {
+        const lines = text.split('\n');
+        if (lines.length > PREVIEW_LINE_LIMIT) {
+            editor.innerText = lines.slice(0, PREVIEW_LINE_LIMIT).join('\n');
+            document.getElementById('preview-line-count').textContent =
+                `${PREVIEW_LINE_LIMIT.toLocaleString()} / ${lines.length.toLocaleString()} 行`;
+            previewNotice.style.display = 'block';
+        } else {
+            editor.innerText = text;
+        }
+    }
+
+    // ── PDF 导出入口 ──────────────────────────────────────
+    async function exportPDF() {
+        const text = (fullText || editor.innerText || '').trim();
+        if (!text) return alert('内容为空，无法生成 PDF');
+
+        const bytes  = new TextEncoder().encode(text).length;
+        const name   = fileName || 'document';
+
+        setBusy(true, '准备中...', 1);
+
+        try {
+            if (bytes <= CHUNK_SIZE) {
+                // ── 小文件：直接单次请求 ──
+                await convertSingle(text, name);
+            } else {
+                // ── 大文件：分片上传 → 后端合并 ──
+                await convertChunked(text, name);
+            }
+        } catch(err) {
+            alert('生成失败：' + err.message);
+            console.error(err);
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    /** 单次转换（文本 < 3MB） */
+    async function convertSingle(text, filename) {
+        setBusy(true, '后端转换中...', 30);
+
+        const resp = await fetch(API_CONVERT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text, filename }),
+        });
+
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({ error: resp.statusText }));
+            throw new Error(err.error || '转换失败');
+        }
+
+        setBusy(true, '下载中...', 95);
+        await downloadBlob(await resp.blob(), filename + '.pdf');
+    }
+
+    /**
+     * 分片转换（文本 ≥ 3MB）
+     * 流程：
+     *  1. 把文本按字节切成若干 3MB 片
+     *  2. 逐片 POST /api/convert，得到 PDF base64
+     *  3. 所有片转完后，POST /api/merge 合并
+     *  4. 触发下载
+     */
+    async function convertChunked(text, filename) {
+        // 按字节切片（注意不能从字符中间切，用 TextEncoder/Decoder）
+        const encoded = new TextEncoder().encode(text);
+        const totalChunks = Math.ceil(encoded.length / CHUNK_SIZE);
+        const pdfChunks   = [];
+
+        for (let i = 0; i < totalChunks; i++) {
+            const sliceBytes = encoded.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+            const sliceText  = new TextDecoder('utf-8').decode(sliceBytes);
+
+            const pct = Math.round((i / totalChunks) * 80) + 5;
+            setBusy(true, `转换中 ${i + 1}/${totalChunks} 片...`, pct);
+
+            const resp = await fetch(API_CONVERT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: sliceText, filename }),
+            });
+
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({ error: resp.statusText }));
+                throw new Error(`第 ${i + 1} 片转换失败：${err.error}`);
+            }
+
+            // 把 PDF 字节转为 base64，发给 merge 接口
+            const pdfBuf  = await resp.arrayBuffer();
+            const pdfB64  = arrayBufferToBase64(pdfBuf);
+            pdfChunks.push(pdfB64);
+        }
+
+        // 合并
+        setBusy(true, `合并 ${totalChunks} 片 PDF...`, 90);
+
+        const mergeResp = await fetch(API_MERGE, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chunks: pdfChunks, filename }),
+        });
+
+        if (!mergeResp.ok) {
+            const err = await mergeResp.json().catch(() => ({ error: mergeResp.statusText }));
+            throw new Error('合并失败：' + err.error);
+        }
+
+        setBusy(true, '下载中...', 98);
+        await downloadBlob(await mergeResp.blob(), filename + '.pdf');
+    }
+
+    // ── 工具函数 ──────────────────────────────────────────
+
+    function arrayBufferToBase64(buffer) {
+        const bytes = new Uint8Array(buffer);
+        let binary  = '';
+        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+        return btoa(binary);
+    }
+
+    async function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a   = document.createElement('a');
+        a.href     = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+    }
+
+    function setBusy(busy, label = '', pct = 0) {
+        downloadBtn.disabled = busy;
+        clearBtn.disabled    = busy;
+        uploadLabel.style.pointerEvents = busy ? 'none' : '';
+        uploadLabel.style.opacity       = busy ? '0.55' : '';
+
+        if (busy) {
+            progressArea.classList.add('visible');
+            progressBar.style.width = Math.round(pct) + '%';
+            progressLbl.textContent = label;
+        } else {
+            progressArea.classList.remove('visible');
+            progressBar.style.width = '0%';
+        }
+    }
+
+    function reset() {
+        fullText = '';
+        fileName = '';
+        editor.innerText = '';
+        fileInfo.style.display   = 'none';
+        previewNotice.style.display = 'none';
+    }
+
+    function clearEditor() {
+        if (confirm('确定要清空编辑器吗？')) {
+            reset();
+            fileInput.value = '';
+        }
+    }
+
+    window.onload = () => {
+        editor.innerText =
+            '编辑器已就绪。\n\n' +
+            '1. 点击「上传文档」加载 TXT 文件（支持 30MB 大文件）。\n' +
+            '2. 也可直接在此处输入或粘贴文本。\n' +
+            '3. 点击「保存为 PDF」，后端转换，中文完整显示。\n' +
+            '4. 大文件自动分片上传，进度条实时显示。';
+    };
+    </script>
+</body>
+</html>
