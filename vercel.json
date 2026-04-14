@@ -1,17 +1,7 @@
 {
   "version": 2,
-  "functions": {
-    "api/convert.py": {
-      "runtime": "python3.12",
-      "maxDuration": 60
-    },
-    "api/merge.py": {
-      "runtime": "python3.12",
-      "maxDuration": 60
-    }
-  },
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/(.*)",     "dest": "/public/$1" }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.py" },
+    { "source": "/(.*)", "destination": "/public/$1" }
   ]
 }
